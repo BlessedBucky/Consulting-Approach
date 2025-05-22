@@ -1,0 +1,98 @@
+---
+title: "Consulting Approach"
+author: "Guanhong Chen"
+date: "2025-05-22"
+output: html_document
+---
+Data Preparation and Handling
+Reading Data and Checking Missing Values
+
+
+```{r setup, include=FALSE}
+# Set the working directory and load the dataset
+setwd("C:/Users/Blessed Bucky/Desktop/counsalting approach dataset")
+car <- read.csv("autoscout24-germany-dataset.csv")
+
+# Check the structure and summary of the dataset
+str(car)
+summary(car)
+
+# Check for missing values in the dataset
+missing_data <- colSums(is.na(car))
+print(missing_data)
+
+# Select rows with missing values
+car_with_missing <- car[!complete.cases(car), ]
+head(car_with_missing)
+View(car_with_missing)
+
+```
+Handling Missing Data and Outliers
+```{r cars}
+# Replace missing horsepower (hp) values with 100
+car$hp[is.na(car$hp)] <- 100
+summary(car$hp)
+# Compute IQR for mileage and price
+mileage_IQR <- IQR(car$mileage, na.rm = TRUE)
+mileage_Q1 <- quantile(car$mileage, 0.25, na.rm = TRUE)
+mileage_Q3 <- quantile(car$mileage, 0.75, na.rm = TRUE)
+mileage_lower_bound <- mileage_Q1 - 1.5 * mileage_IQR
+mileage_upper_bound <- mileage_Q3 + 1.5 * mileage_IQR
+
+# Find outliers in mileage
+mileage_outliers <- car$mileage < mileage_lower_bound | car$mileage > mileage_upper_bound
+table(mileage_outliers)
+
+# Compute IQR for price
+price_IQR <- IQR(car$price, na.rm = TRUE)
+price_Q1 <- quantile(car$price, 0.25, na.rm = TRUE)
+price_Q3 <- quantile(car$price, 0.75, na.rm = TRUE)
+price_lower_bound <- price_Q1 - 1.5 * price_IQR
+price_upper_bound <- price_Q3 + 1.5 * price_IQR
+
+# Find outliers in price
+price_outliers <- car$price < price_lower_bound | car$price > price_upper_bound
+table(price_outliers)
+
+```
+
+Data Visualization
+
+```{r pressure, echo=FALSE}
+# Count the number of cars by brand and create a bar plot
+library(ggplot2)
+brand_count <- table(car$make)
+brand_count_sorted <- sort(brand_count, decreasing = TRUE)
+
+ggplot(data = data.frame(brand = names(brand_count_sorted), count = as.vector(brand_count_sorted)), aes(x = reorder(brand, -count), y = count)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Brand Distribution in the Market", x = "Brand", y = "Number of Cars")
+
+
+# Create a box plot showing the price distribution by brand
+ggplot(car, aes(x = make, y = price)) +
+  geom_boxplot(fill = "skyblue", outlier.colour = "red") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Price Distribution by Brand", x = "Brand", y = "Price")
+
+
+# Calculate the number of cars sold by make and model
+car_model_count <- table(car$make, car$model)
+car_model_count_df <- as.data.frame(car_model_count)
+names(car_model_count_df) <- c("Make", "Model", "Count")
+car_model_count_df <- car_model_count_df[order(-car_model_count_df$Count), ]
+
+# Plot the top 5 most popular car models
+top_5_models <- head(car_model_count_df, 5)
+
+ggplot(top_5_models, aes(x = reorder(paste(Make, Model), -Count), y = Count, fill = Count)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top 5 Most Popular Cars by Make and Model", x = "Car Model", y = "Number of Cars Sold") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_gradient(low = "lightblue", high = "darkblue")
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
